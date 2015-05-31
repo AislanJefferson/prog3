@@ -15,14 +15,51 @@
 # limitations under the License.
 #
 import webapp2
-import json
+
+from modelos import *
+
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
         self.response.set_status(301)
-        self.response.headers.add('Location','http://posting.us.to/')
+        self.response.headers.add('Location', 'http://posting.us.to/')
+
+
+class UsuariosHandler(webapp2.RequestHandler):
+    def get(self, uri):
+        usuarios = Usuario.query().fetch()
+        if (len(usuarios) > 0):
+            self.response.headers['Content-Type'] = 'application/json'
+            saida = JSONEncoder().encode(usuarios)
+            self.response.write(saida)
+
+    def post(self, arg):
+        id = self.request.get('usuarioID')
+        if id and (not Usuario.existe(id)):
+            novo_usuario = Usuario(id=id, usuarioID=id,
+                                   nome=self.request.get('nome'),
+                                   email=self.request.get('email'))
+            novo_usuario.put()
+            self.response.set_status(201)
+        else:
+            self.response.set_status(400)
+
+
+class UsuarioHandler(webapp2.RequestHandler):
+    def get(self, id):
+        usr = Usuario.get_by_id(id)
+        if usr is None:
+            self.response.set_status(404)
+        else:
+            self.response.headers['Content-Type'] = 'application/json'
+            saida = JSONEncoder().encode(usr)
+            self.response.write(saida)
 
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler)
+    ('/', MainHandler),
+    ('/usuarios/((?!\s*$).+)', UsuarioHandler),
+    ## para quando uri for na forma /usuarios/algumacoisa
+    ('/usuarios(/?)$', UsuariosHandler)
+    ##para quando uri for na forma /usuario ou /usuarios/
 ], debug=True)
