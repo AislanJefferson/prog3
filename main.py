@@ -62,6 +62,7 @@ class UsuariosHandler(webapp2.RequestHandler):
 
 class UsuarioHandler(webapp2.RequestHandler):
     """Classe manipuladora de requisicoes para um unico usuario"""
+
     def get(self, id):
         usr = Usuario.get_by_id(id)
         if usr is None:
@@ -71,21 +72,41 @@ class UsuarioHandler(webapp2.RequestHandler):
             saida = JSONEncoder().encode(usr)
             self.response.write(saida)
 
-    def delete(self, id):
-        """Metodo que remove usuario e seus posts existentes.
-        Ele envia um status 400, caso nao exista tal usuario a ser deletado
+    def put(self, id):
 
-        Parametros recebidos via DELETE:
-        Nenhum! Ele usa o conteudo <id> do  api.posting.us.to/usuarios/<id> como id
-        """
+        """Metodo de atualizacao de dados de um usuario
+
+            Parametros que podem ser recebidos (Case Sensitive) via put:
+            nome: Nome de exibicao do usuario
+            email: o email vinculado a ele ( pode haver o mesmo para varias contas )"""
+
         usr = Usuario.get_by_id(id)
-        if usr is not None:
-            for post in usr.posts:
-                post.delete()
-            usr.key.delete()
-            self.response.set_status(200)
-        else:
+        args_recebidos = self.request.arguments()
+        if usr is None:
             self.response.set_status(404)
+        elif len(args_recebidos) > 0:
+            for arg in args_recebidos:
+                if (arg != 'usuarioID' and arg != 'id'):
+                    usr.__setattr__(arg, self.request.get(arg))
+            usr.put()
+            self.response.set_status(204)
+
+
+def delete(self, id):
+    """Metodo que remove usuario e seus posts existentes.
+    Ele envia um status 400, caso nao exista tal usuario a ser deletado
+
+    Parametros recebidos via DELETE:
+    Nenhum! Ele usa o conteudo <id> do  api.posting.us.to/usuarios/<id> como id
+    """
+    usr = Usuario.get_by_id(id)
+    if usr is not None:
+        for post in usr.posts:
+            post.delete()
+        usr.key.delete()
+        self.response.set_status(200)
+    else:
+        self.response.set_status(404)
 
 
 app = webapp2.WSGIApplication([
