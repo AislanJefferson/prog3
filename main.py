@@ -76,7 +76,7 @@ class UsuarioHandler(webapp2.RequestHandler):
         Ele envia um status 400, caso nao exista tal usuario a ser deletado
 
         Parametros recebidos via DELETE:
-        Nenhum! Ele usa o conteudo <id> do  api.posting.us.to/usuario/<id> como id
+        Nenhum! Ele usa o conteudo <id> do  api.posting.us.to/usuarios/<id> como id
         """
         usr = Usuario.get_by_id(id)
         if usr is not None:
