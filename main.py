@@ -20,13 +20,19 @@ from modelos import *
 
 
 class MainHandler(webapp2.RequestHandler):
+    """Classe manipuladora das requisicoes na raiz do dominio api.posting.us.to"""
+
     def get(self):
+        """Metodo que redireciona para a pagina web do projeto"""
         self.response.set_status(301)
         self.response.headers.add('Location', 'http://posting.us.to/')
 
 
 class UsuariosHandler(webapp2.RequestHandler):
-    def get(self, uri):
+    """Classe manipuladora de requisicoes para a COLECAO de usuario"""
+
+    def get(self, arg):
+        """Metodo de consulta de dados todos usuarios em uma unica requisicao"""
         usuarios = Usuario.query().fetch()
         if (len(usuarios) > 0):
             self.response.headers['Content-Type'] = 'application/json'
@@ -34,6 +40,12 @@ class UsuariosHandler(webapp2.RequestHandler):
             self.response.write(saida)
 
     def post(self, arg):
+        """Metodo de criacao de um novo usuario
+
+        Parametros recebidos (Case Sensitive) via post:
+        usuarioID: O id unico e textual(pode ser numero) do usuario a ser criado
+        nome: Nome de exibicao do usuario
+        email: o email vinculado a ele ( pode haver o mesmo para varias contas )"""
         id = self.request.get('usuarioID')
         if id and (not Usuario.existe(id)):
             novo_usuario = Usuario(id=id, usuarioID=id,
@@ -46,6 +58,8 @@ class UsuariosHandler(webapp2.RequestHandler):
 
 
 class UsuarioHandler(webapp2.RequestHandler):
+    """Classe manipuladora de requisicoes para um unico usuario"""
+
     def get(self, id):
         usr = Usuario.get_by_id(id)
         if usr is None:
@@ -54,6 +68,22 @@ class UsuarioHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'application/json'
             saida = JSONEncoder().encode(usr)
             self.response.write(saida)
+
+    def delete(self, id):
+        """Metodo que remove usuario e seus posts existentes.
+        Ele envia um status 400, caso nao exista tal usuario a ser deletado
+
+        Parametros recebidos via DELETE:
+        usuarioID:  O id unico e textual(pode ser numero) do usuario a ser deletado
+        """
+        usr = Usuario.get_by_id(id)
+        if usr is not None:
+            for post in usr.posts:
+                post.delete()
+            usr.key.delete()
+            self.response.set_status(200)
+        else:
+            self.response.set_status(400)
 
 
 app = webapp2.WSGIApplication([

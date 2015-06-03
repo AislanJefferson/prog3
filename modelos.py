@@ -7,7 +7,11 @@ from google.appengine.ext import ndb
 
 
 class JSONEncoder(json.JSONEncoder):
+    """Classe de transformação de elementos do datastore para JSON
+    """
     def default(self, o):
+        """Metodo que sobrescreve o da classe pai JSONEncoder para adequar
+        os metodos da classe pai para elementos do datastore"""
         if isinstance(o, ndb.Key):
             return str(o.id())
         if isinstance(o, ndb.Model):
@@ -17,12 +21,18 @@ class JSONEncoder(json.JSONEncoder):
 
 
 class Post(ndb.Model):
+    """Classe de modelagem para o datastore de um Post
+    """
+    # FIXME: Modelagem incompleta ou fraca
     conteudo = ndb.StringProperty()
     dt_postado = ndb.DateTimeProperty(auto_now_add=True)
     dt_modificado = ndb.DateTimeProperty(auto_now=True)
 
 
 class Usuario(ndb.Model):
+    """Classe de modelagem para o datastore de um usuario
+    """
+    # FIXME: Aperfeicoar mais este modelo
     nome = ndb.StringProperty()
     usuarioID = ndb.StringProperty(required=True)
     email = ndb.StringProperty()
@@ -31,6 +41,8 @@ class Usuario(ndb.Model):
 
     @staticmethod
     def existe(id):
+        """Metodo estatico(da classe) utilizado para verificar se existe alguma
+         entidade com um respectivo ID salvada no datastore """
         try:
             existe = False
             if Usuario.get_by_id(id):
