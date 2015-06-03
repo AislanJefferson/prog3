@@ -62,7 +62,6 @@ class UsuariosHandler(webapp2.RequestHandler):
 
 class UsuarioHandler(webapp2.RequestHandler):
     """Classe manipuladora de requisicoes para um unico usuario"""
-
     def get(self, id):
         usr = Usuario.get_by_id(id)
         if usr is None:
@@ -92,7 +91,5 @@ class UsuarioHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/usuarios/((?!\s*$).+)', UsuarioHandler),
-    ## para quando uri for na forma /usuarios/algumacoisa
     ('/usuarios(/?)$', UsuariosHandler)
-    ##para quando uri for na forma /usuario ou /usuarios/
 ], debug=True)

@@ -31,8 +31,7 @@ class Post(ndb.Model):
 
 
 class Usuario(ndb.Model):
-    """Classe de modelagem para o datastore de um usuario
-    """
+    """Classe de modelagem para o datastore de um usuario"""
     # FIXME: Aperfeicoar mais este modelo
     nome = ndb.StringProperty()
     usuarioID = ndb.StringProperty(required=True)
