@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 __author__ = 'Aislan'
 
 from datetime import datetime, date, time
@@ -7,7 +8,7 @@ from google.appengine.ext import ndb
 
 
 class JSONEncoder(json.JSONEncoder):
-    """Classe de transformação de elementos do datastore para JSON
+    """Classe de transformacao de elementos do datastore para JSON
     """
     def default(self, o):
         """Metodo que sobrescreve o da classe pai JSONEncoder para adequar

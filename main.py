@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Copyright 2007 Google Inc.
 #
@@ -53,8 +54,10 @@ class UsuariosHandler(webapp2.RequestHandler):
                                    email=self.request.get('email'))
             novo_usuario.put()
             self.response.set_status(201)
+        elif id:
+            self.response.set_status(409)
         else:
-            self.response.set_status(400)
+            self.response.set_status(404)
 
 
 class UsuarioHandler(webapp2.RequestHandler):
@@ -74,7 +77,7 @@ class UsuarioHandler(webapp2.RequestHandler):
         Ele envia um status 400, caso nao exista tal usuario a ser deletado
 
         Parametros recebidos via DELETE:
-        usuarioID:  O id unico e textual(pode ser numero) do usuario a ser deletado
+        Nenhum! Ele usa o conteudo <id> do  api.posting.us.to/usuario/<id> como id
         """
         usr = Usuario.get_by_id(id)
         if usr is not None:
@@ -83,7 +86,7 @@ class UsuarioHandler(webapp2.RequestHandler):
             usr.key.delete()
             self.response.set_status(200)
         else:
-            self.response.set_status(400)
+            self.response.set_status(404)
 
 
 app = webapp2.WSGIApplication([
