@@ -91,22 +91,21 @@ class UsuarioHandler(webapp2.RequestHandler):
             usr.put()
             self.response.set_status(204)
 
+    def delete(self, id):
+        """Metodo que remove usuario e seus posts existentes.
+        Ele envia um status 400, caso nao exista tal usuario a ser deletado
 
-def delete(self, id):
-    """Metodo que remove usuario e seus posts existentes.
-    Ele envia um status 400, caso nao exista tal usuario a ser deletado
-
-    Parametros recebidos via DELETE:
-    Nenhum! Ele usa o conteudo <id> do  api.posting.us.to/usuarios/<id> como id
-    """
-    usr = Usuario.get_by_id(id)
-    if usr is not None:
-        for post in usr.posts:
-            post.delete()
-        usr.key.delete()
-        self.response.set_status(200)
-    else:
-        self.response.set_status(404)
+        Parametros recebidos via DELETE:
+        Nenhum! Ele usa o conteudo <id> do  api.posting.us.to/usuarios/<id> como id
+        """
+        usr = Usuario.get_by_id(id)
+        if usr is not None:
+            for post in usr.posts:
+                post.delete()
+            usr.key.delete()
+            self.response.set_status(200)
+        else:
+            self.response.set_status(404)
 
 
 app = webapp2.WSGIApplication([
