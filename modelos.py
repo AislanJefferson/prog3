@@ -26,6 +26,7 @@ class Post(ndb.Model):
     """
     # FIXME: Modelagem incompleta ou fraca
     conteudo = ndb.StringProperty()
+    id = ndb.KeyProperty(kind='Post')
     dt_postado = ndb.DateTimeProperty(auto_now_add=True)
     dt_modificado = ndb.DateTimeProperty(auto_now=True)
 

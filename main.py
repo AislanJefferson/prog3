@@ -108,8 +108,68 @@ class UsuarioHandler(webapp2.RequestHandler):
             self.response.set_status(404)
 
 
+class PostsHandler(webapp2.RequestHandler):
+    def get(self, *args):
+        usuarioID = args[0]
+        usr = Usuario.get_by_id(usuarioID)
+        if usr is not None and len(usr.posts) > 0:
+            posts = ndb.get_multi(usr.posts)
+            json_str = JSONEncoder().encode(posts)
+            self.response.headers['Content-Type'] = 'application/json'
+            self.response.write(json_str)
+        else:
+            self.response.set_status(404)
+
+    def post(self, *args):
+        usuarioID = args[0]
+        conteudo = self.request.get('conteudo')
+        usr = Usuario.get_by_id(usuarioID)
+        if conteudo and usr is not None:
+            post = Post(conteudo=conteudo)
+            post.id = post.put()
+            post.put()
+            usr.posts.append(post.id)
+            usr.put()
+        else:
+            self.response.set_status(404)
+
+
+class PostHandler(webapp2.RequestHandler):
+    def get(self, *args):
+
+        usuarioID = args[0]
+        postID = args[1]
+        usr = Usuario.get_by_id(usuarioID)
+        post = Post.get_by_id(int(postID))
+
+        if usr is not None and post is not None and post.key in usr.posts:
+            self.response.headers['Content-Type'] = 'application/json'
+            saida = JSONEncoder().encode(post)
+            self.response.write(saida)
+        else:
+            self.response.set_status(404)
+
+    def put(self, *args):
+        pass
+
+    def delete(self, *args):
+        usuarioID = args[0]
+        postID = args[1]
+        usr = Usuario.get_by_id(usuarioID)
+        post = Post.get_by_id(int(postID))
+        if usr is not None and post is not None and post.key in usr.posts:
+            usr.posts.remove(post.key)
+            post.key.delete()
+            usr.put()
+        else:
+            self.response.set_status(404)
+
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
+    ('/usuarios/((?!\s*$).+)/posts/((?!\s*$).+)', PostHandler),
+    ('/usuarios/((?!\s*$).+)/posts(/?)$', PostsHandler),
     ('/usuarios/((?!\s*$).+)', UsuarioHandler),
     ('/usuarios(/?)$', UsuariosHandler)
+
 ], debug=True)
