@@ -10,15 +10,16 @@ from google.appengine.ext import ndb
 class JSONEncoder(json.JSONEncoder):
     """Classe de transformacao de elementos do datastore para JSON
     """
+
     def default(self, o):
         """Metodo que sobrescreve o da classe pai JSONEncoder para adequar
         os metodos da classe pai para elementos do datastore"""
         if isinstance(o, ndb.Key):
-            return str(o.id())
+            o = o.get()
         if isinstance(o, ndb.Model):
             return o.to_dict()
         elif isinstance(o, (datetime, date, time)):
-            return str(o)
+            return str(o.isoformat())
 
 
 class Post(ndb.Model):
@@ -26,7 +27,8 @@ class Post(ndb.Model):
     """
     # FIXME: Modelagem incompleta ou fraca
     conteudo = ndb.StringProperty()
-    id = ndb.KeyProperty(kind='Post')
+    id = ndb.StringProperty()
+    url = ndb.StringProperty()
     dt_postado = ndb.DateTimeProperty(auto_now_add=True)
     dt_modificado = ndb.DateTimeProperty(auto_now=True)
 

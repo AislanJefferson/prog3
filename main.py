@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import json
+
 import webapp2
 
 from modelos import *
@@ -25,39 +27,42 @@ class MainHandler(webapp2.RequestHandler):
 
     def get(self):
         """Metodo que redireciona para a pagina web do projeto"""
-        self.response.set_status(301)
-        self.response.headers.add('Location', 'http://posting.us.to/')
+        self.response.write(self.request.environ['HTTP_HOST'])
 
 
 class UsuariosHandler(webapp2.RequestHandler):
     """Classe manipuladora de requisicoes para a COLECAO de usuario"""
 
-    def get(self, arg):
+    def get(self, ):
         """Metodo de consulta de dados todos usuarios em uma unica requisicao"""
         usuarios = Usuario.query().fetch()
         if (len(usuarios) > 0):
-            self.response.headers['Content-Type'] = 'application/json'
+            self.response.content_type = 'application/json'
             saida = JSONEncoder().encode(usuarios)
             self.response.write(saida)
 
-    def post(self, arg):
+    def post(self):
         """Metodo de criacao de um novo usuario
 
         Parametros recebidos (Case Sensitive) via post:
         usuarioID: O id unico e textual(pode ser numero) do usuario a ser criado
         nome: Nome de exibicao do usuario
         email: o email vinculado a ele ( pode haver o mesmo para varias contas )"""
-        id = self.request.get('usuarioID')
-        if id and (not Usuario.existe(id)):
-            novo_usuario = Usuario(id=id, usuarioID=id,
-                                   nome=self.request.get('nome'),
-                                   email=self.request.get('email'))
-            novo_usuario.put()
-            self.response.set_status(201)
-        elif id:
-            self.response.set_status(409)
-        else:
-            self.response.set_status(404)
+        if (self.request.content_type == 'application/json'):
+            campos = json.loads(self.request.body)
+            id = campos['usuarioID'] if campos.has_key('usuarioID') else ''
+            if id and (not Usuario.existe(id)):
+                novo_usuario = Usuario(id=id, usuarioID=id,
+                                       nome=campos['nome'] if campos.has_key(
+                                           'nome') else '',
+                                       email=campos['email'] if campos.has_key(
+                                           'email') else '')
+                novo_usuario.put()
+                self.response.set_status(201)
+            elif id:
+                self.response.set_status(409)
+            else:
+                self.response.set_status(404)
 
 
 class UsuarioHandler(webapp2.RequestHandler):
@@ -68,7 +73,7 @@ class UsuarioHandler(webapp2.RequestHandler):
         if usr is None:
             self.response.set_status(404)
         else:
-            self.response.headers['Content-Type'] = 'application/json'
+            self.response.content_type = 'application/json'
             saida = JSONEncoder().encode(usr)
             self.response.write(saida)
 
@@ -115,20 +120,25 @@ class PostsHandler(webapp2.RequestHandler):
         if usr is not None and len(usr.posts) > 0:
             posts = ndb.get_multi(usr.posts)
             json_str = JSONEncoder().encode(posts)
-            self.response.headers['Content-Type'] = 'application/json'
+            self.response.content_type = 'application/json'
             self.response.write(json_str)
         else:
             self.response.set_status(404)
 
     def post(self, *args):
+        campos = json.loads(self.request.body)
         usuarioID = args[0]
-        conteudo = self.request.get('conteudo')
+        conteudo = campos['conteudo'] if campos.has_key('conteudo') else ''
         usr = Usuario.get_by_id(usuarioID)
         if conteudo and usr is not None:
             post = Post(conteudo=conteudo)
-            post.id = post.put()
+            post_key = post.put()
+            post.id = str(post_key.id())
+            post.url = 'http://' + self.request.environ[
+                'HTTP_HOST'] + self.request.path + '/' + str(
+                post.id)
             post.put()
-            usr.posts.append(post.id)
+            usr.posts.append(post_key)
             usr.put()
         else:
             self.response.set_status(404)
@@ -143,7 +153,7 @@ class PostHandler(webapp2.RequestHandler):
         post = Post.get_by_id(int(postID))
 
         if usr is not None and post is not None and post.key in usr.posts:
-            self.response.headers['Content-Type'] = 'application/json'
+            self.response.content_type = 'application/json'
             saida = JSONEncoder().encode(post)
             self.response.write(saida)
         else:
@@ -168,8 +178,8 @@ class PostHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/usuarios/((?!\s*$).+)/posts/((?!\s*$).+)', PostHandler),
-    ('/usuarios/((?!\s*$).+)/posts(/?)$', PostsHandler),
+    ('/usuarios/((?!\s*$).+)/posts$', PostsHandler),
     ('/usuarios/((?!\s*$).+)', UsuarioHandler),
-    ('/usuarios(/?)$', UsuariosHandler)
+    ('/usuarios$', UsuariosHandler)
 
 ], debug=True)
