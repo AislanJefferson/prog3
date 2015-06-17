@@ -27,8 +27,8 @@ class MainHandler(webapp2.RequestHandler):
 
     def get(self):
         """Metodo que redireciona para a pagina web do projeto"""
-        self.request.GET.add('teste', 324)
-        self.response.write(self.request.GET.encode('ascii'))
+        self.response.set_status(301)
+        self.response.headers.add('Location', 'http://posting.us.to/')
 
 
 class UsuariosHandler(webapp2.RequestHandler):
@@ -54,6 +54,10 @@ class UsuariosHandler(webapp2.RequestHandler):
                                             proxima_URL=proxima_url,
                                             data=usuarios)
             self.response.content_type = 'application/json'
+
+            self.response.cache_control = 'public'
+            self.response.cache_control.max_age = 1
+
             saida = JSONEncoder().encode(users_wrapper)
             self.response.write(saida)
 
@@ -90,6 +94,8 @@ class UsuarioHandler(webapp2.RequestHandler):
             self.response.set_status(404)
         else:
             self.response.content_type = 'application/json'
+            self.response.cache_control = 'public'
+            self.response.cache_control.max_age = 3600
             usr_wrapper = JsonDataWrapper(atual_URL=get_URL_Atual(self),
                                           data=usr)
             saida = JSONEncoder().encode(usr_wrapper)
@@ -154,6 +160,8 @@ class PostsHandler(webapp2.RequestHandler):
                                             data=posts)
             json_str = JSONEncoder().encode(posts_wrapper)
             self.response.content_type = 'application/json'
+            self.response.cache_control = 'public'
+            self.response.cache_control.max_age = 1
             self.response.write(json_str)
         else:
             self.response.set_status(404)
@@ -186,6 +194,8 @@ class PostHandler(webapp2.RequestHandler):
         post = key.get()
         if usr is not None and post is not None:
             self.response.content_type = 'application/json'
+            self.response.cache_control = 'public'
+            self.response.cache_control.max_age = 1
             post_wrapper = JsonDataWrapper(atual_URL=get_URL_Atual(self),
                                            data=post)
             saida = JSONEncoder().encode(post_wrapper)
