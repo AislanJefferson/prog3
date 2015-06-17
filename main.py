@@ -15,11 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import json
 
 import webapp2
 
 from modelos import *
+from Utils import *
 
 
 class MainHandler(webapp2.RequestHandler):
@@ -27,18 +27,34 @@ class MainHandler(webapp2.RequestHandler):
 
     def get(self):
         """Metodo que redireciona para a pagina web do projeto"""
-        self.response.write(self.request.environ['HTTP_HOST'])
+        self.request.GET.add('teste', 324)
+        self.response.write(self.request.GET.encode('ascii'))
 
 
 class UsuariosHandler(webapp2.RequestHandler):
     """Classe manipuladora de requisicoes para a COLECAO de usuario"""
 
-    def get(self, ):
+    def get(self):
         """Metodo de consulta de dados todos usuarios em uma unica requisicao"""
-        usuarios = Usuario.query().fetch()
+        try:
+            curs = ndb.Cursor(urlsafe=self.request.get('hash'))
+            qtde = int(self.request.get('qtde')) if self.request.get(
+                'qtde') else 20
+        except:
+            curs = ndb.Cursor(urlsafe='')
+            self.request.GET.pop('qtde')
+            qtde = 20
+        qry = Usuario.query().order(Usuario.usuarioID)
+        usuarios, prox_cursor, mais = qry.fetch_page(qtde, start_cursor=curs)
         if (len(usuarios) > 0):
+            urlAtual = insert_URL_Params(get_URL_Atual(self), self.request.GET)
+            proxima_url = insert_URL_Params(urlAtual, {
+                'hash': prox_cursor.urlsafe()}) if mais else None
+            users_wrapper = JsonDataWrapper(atual_URL=urlAtual,
+                                            proxima_URL=proxima_url,
+                                            data=usuarios)
             self.response.content_type = 'application/json'
-            saida = JSONEncoder().encode(usuarios)
+            saida = JSONEncoder().encode(users_wrapper)
             self.response.write(saida)
 
     def post(self):
@@ -74,7 +90,9 @@ class UsuarioHandler(webapp2.RequestHandler):
             self.response.set_status(404)
         else:
             self.response.content_type = 'application/json'
-            saida = JSONEncoder().encode(usr)
+            usr_wrapper = JsonDataWrapper(atual_URL=get_URL_Atual(self),
+                                          data=usr)
+            saida = JSONEncoder().encode(usr_wrapper)
             self.response.write(saida)
 
     def put(self, id):
@@ -118,8 +136,23 @@ class PostsHandler(webapp2.RequestHandler):
         usuarioID = args[0]
         usr = Usuario.get_by_id(usuarioID)
         if usr is not None and len(usr.posts) > 0:
-            posts = ndb.get_multi(usr.posts)
-            json_str = JSONEncoder().encode(posts)
+            try:
+                curs = ndb.Cursor(urlsafe=self.request.get('hash'))
+                qtde = int(self.request.get('qtde')) if self.request.get(
+                    'qtde') else 20
+            except:
+                curs = ndb.Cursor(urlsafe='')
+                self.request.GET.pop('qtde')
+                qtde = 20
+            qry = Post.query(ancestor=usr.key).order(-Post.dt_postado)
+            posts, prox_cursor, mais = qry.fetch_page(qtde, start_cursor=curs)
+            urlAtual = insert_URL_Params(get_URL_Atual(self), self.request.GET)
+            proximaURL = insert_URL_Params(urlAtual, {
+                'hash': prox_cursor.urlsafe()}) if mais else None
+            posts_wrapper = JsonDataWrapper(atual_URL=urlAtual,
+                                            proxima_URL=proximaURL,
+                                            data=posts)
+            json_str = JSONEncoder().encode(posts_wrapper)
             self.response.content_type = 'application/json'
             self.response.write(json_str)
         else:
@@ -131,11 +164,10 @@ class PostsHandler(webapp2.RequestHandler):
         conteudo = campos['conteudo'] if campos.has_key('conteudo') else ''
         usr = Usuario.get_by_id(usuarioID)
         if conteudo and usr is not None:
-            post = Post(conteudo=conteudo)
+            post = Post(conteudo=conteudo, parent=usr.key)
             post_key = post.put()
             post.id = str(post_key.id())
-            post.url = 'http://' + self.request.environ[
-                'HTTP_HOST'] + self.request.path + '/' + str(
+            post.url = get_URL_Atual(self) + '/' + str(
                 post.id)
             post.put()
             usr.posts.append(post_key)
@@ -150,11 +182,13 @@ class PostHandler(webapp2.RequestHandler):
         usuarioID = args[0]
         postID = args[1]
         usr = Usuario.get_by_id(usuarioID)
-        post = Post.get_by_id(int(postID))
-
-        if usr is not None and post is not None and post.key in usr.posts:
+        key = ndb.Key(Post, int(postID), parent=usr.key)
+        post = key.get()
+        if usr is not None and post is not None:
             self.response.content_type = 'application/json'
-            saida = JSONEncoder().encode(post)
+            post_wrapper = JsonDataWrapper(atual_URL=get_URL_Atual(self),
+                                           data=post)
+            saida = JSONEncoder().encode(post_wrapper)
             self.response.write(saida)
         else:
             self.response.set_status(404)

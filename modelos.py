@@ -20,6 +20,14 @@ class JSONEncoder(json.JSONEncoder):
             return o.to_dict()
         elif isinstance(o, (datetime, date, time)):
             return str(o.isoformat())
+        elif o is not None and isinstance(o, object):
+            return o.__dict__
+
+
+class JsonDataWrapper():
+    def __init__(self, atual_URL=None, proxima_URL=None, data=None):
+        self.links = {'self': atual_URL, 'next': proxima_URL}
+        self.data = data
 
 
 class Post(ndb.Model):
