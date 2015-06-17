@@ -95,7 +95,7 @@ class UsuarioHandler(webapp2.RequestHandler):
         else:
             self.response.content_type = 'application/json'
             self.response.cache_control = 'public'
-            self.response.cache_control.max_age = 3600
+            self.response.cache_control.max_age = 1
             usr_wrapper = JsonDataWrapper(atual_URL=get_URL_Atual(self),
                                           data=usr)
             saida = JSONEncoder().encode(usr_wrapper)
